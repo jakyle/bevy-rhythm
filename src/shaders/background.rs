@@ -1,13 +1,5 @@
 use super::*;
 
-pub struct ShadersPlugin;
-impl Plugin for ShadersPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(setup_background.system())
-            .add_system(update_background_size.system());
-    }
-}
-
 pub struct Background;
 pub fn setup_background(
     mut commands: Commands,
@@ -39,7 +31,11 @@ pub fn setup_background(
             )),
             ..Default::default()
         })
-        .insert(Background);
+        .insert(Background)
+        .insert(ShaderInputs {
+            time: 0.,
+            resolution: Vec2::new(window.width / window.height, 1.),
+        });
 }
 
 pub fn update_background_size(

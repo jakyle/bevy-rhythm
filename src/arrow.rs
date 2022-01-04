@@ -1,15 +1,21 @@
 use crate::types::*;
 use crate::{consts::*, score::ScoreResource};
-use bevy::prelude::*;
+use bevy::{app::Events, prelude::*};
 
 pub struct ArrowsPlugin;
 impl Plugin for ArrowsPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<ArrowMaterialResource>()
-            .add_startup_system(setup_target_arrows.system())
-            .add_system(spawn_arrows.system())
-            .add_system(move_arrows.system())
-            .add_system(despawn_arrows.system());
+            .add_event::<CorrectArrowEvent>()
+            .add_system_set(
+                SystemSet::on_enter(AppState::Game).with_system(setup_target_arrows.system()),
+            )
+            .add_system_set(
+                SystemSet::on_update(AppState::Game)
+                    .with_system(spawn_arrows.system())
+                    .with_system(move_arrows.system())
+                    .with_system(despawn_arrows.system()),
+            );
     }
 }
 
@@ -108,11 +114,17 @@ fn move_arrows(time: Res<Time>, mut query: Query<(&mut Transform, &Arrow)>) {
     }
 }
 
+pub struct CorrectArrowEvent {
+    pub direction: Directions,
+    pub points: usize,
+}
+
 fn despawn_arrows(
     mut commands: Commands,
     query: Query<(Entity, &Transform, &Arrow)>,
     keyboard_input: Res<Input<KeyCode>>,
     mut score: ResMut<ScoreResource>,
+    mut correct_arrow_events: ResMut<Events<CorrectArrowEvent>>,
 ) {
     for (entity, transform, arrow) in query.iter() {
         let pos = transform.translation.x;
@@ -121,7 +133,12 @@ fn despawn_arrows(
             && arrow.direction.key_just_pressed(&keyboard_input)
         {
             commands.entity(entity).despawn();
-            let _points = score.increase_correct(TARGET_POSITION - pos);
+            let points = score.increase_correct(TARGET_POSITION - pos);
+
+            correct_arrow_events.send(CorrectArrowEvent {
+                direction: arrow.direction,
+                points,
+            })
         }
 
         if pos >= 2. * TARGET_POSITION {

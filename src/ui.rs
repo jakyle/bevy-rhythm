@@ -1,15 +1,17 @@
-use crate::ScoreResource;
+use crate::{consts::AppState, ScoreResource};
 use bevy::{core::FixedTimestep, prelude::*};
 pub struct UIPlugin;
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(setup_ui.system())
+        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_ui.system()))
             .add_system_set(
-                SystemSet::new()
+                SystemSet::on_update(AppState::Game)
                     .with_run_criteria(FixedTimestep::step(0.045))
                     .with_system(update_time_text.system()),
             )
-            .add_system(update_score_text.system());
+            .add_system_set(
+                SystemSet::on_update(AppState::Game).with_system(update_score_text.system()),
+            );
     }
 }
 

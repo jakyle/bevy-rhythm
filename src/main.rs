@@ -1,23 +1,29 @@
 use arrow::ArrowsPlugin;
 use audio::AudioPlugin;
 use bevy::{input::system::exit_on_esc_system, prelude::*};
+use consts::AppState;
+use menu::MenuPlugin;
 use score::ScoreResource;
-use ui::UIPlugin;
 use shaders::ShadersPlugin;
+use ui::UIPlugin;
 
 pub mod arrow;
 pub mod audio;
 pub mod consts;
+pub mod menu;
 pub mod score;
+pub mod shaders;
 pub mod types;
 pub mod ui;
-pub mod shaders;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let config = types::load_config("test.toml", &asset_server);
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(UiCameraBundle::default());
-    commands.insert_resource(config);
+    commands
+        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .commands()
+        .spawn_bundle(UiCameraBundle::default())
+        .commands()
+        .insert_resource(config);
 }
 
 fn main() {
@@ -29,7 +35,7 @@ fn main() {
             height: 600.,
             ..Default::default()
         })
-        .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.5)))
+        .add_state(AppState::Menu)
         .init_resource::<ScoreResource>()
         .add_startup_system(setup.system())
         .add_system(exit_on_esc_system.system())
@@ -38,5 +44,6 @@ fn main() {
         .add_plugin(UIPlugin)
         .add_plugin(AudioPlugin)
         .add_plugin(ShadersPlugin)
+        .add_plugin(MenuPlugin)
         .run();
 }
